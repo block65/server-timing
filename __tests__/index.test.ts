@@ -59,11 +59,11 @@ describe('Express', () => {
 
     measure();
 
-    expect(timing.toHttpHeader()).toMatchInlineSnapshot(
-      '"test;dur=177.00, test2;dur=100.00, marktest;dur=1000.44"'
+    expect(timing.toHttpHeader()).toMatch(
+      /^test;dur=177\.00, test2;dur=100\.00, marktest;dur=1000\.\d{2}$/
     );
-    expect(timing.toString()).toMatchInlineSnapshot(
-      '"test;dur=177.00, test2;dur=100.00, marktest;dur=1000.44"'
+    expect(timing.toString()).toMatch(
+      /^test;dur=177\.00, test2;dur=100\.00, marktest;dur=1000\.\d{2}$/
     );
   });
 });
