@@ -23,7 +23,7 @@ export class ServerTiming {
     // we support undefined values as a nice DX improvement,
     // in the case you pass a direct value that might be `undefined`
     // It just saves an "if" wrapper in the calling code
-    if (!value) {
+    if (typeof value === 'undefined') {
       return this;
     }
     const stat = this.#stats.get(name);
