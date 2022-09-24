@@ -18,6 +18,5 @@ dist: node_modules tsconfig.json $(SRCS)
 	yarn tsc
 
 .PHONY: dev
-dev: 
-	yarn tsc -w
-	
+dev:
+	NODE_OPTIONS=--experimental-vm-modules yarn jest --watchAll --runInBand --coverage
