@@ -7,17 +7,19 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/lib/index.d.ts",
-      "default": "./dist/lib/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./express": {
-      "types": "./dist/lib/express.d.ts",
-      "default": "./dist/lib/express.js"
+      "types": "./dist/src/express.d.ts",
+      "default": "./dist/src/express.js"
     }
   },
   "files": [
     "dist/lib/*.js",
-    "dist/lib/*.d.ts"
+    "dist/lib/*.d.ts",
+    "dist/src/*.js",
+    "dist/src/*.d.ts"
   ],
   "dependencies": {},
   "devDependencies": {
