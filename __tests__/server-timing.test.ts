@@ -3,40 +3,26 @@ import { ServerTiming } from '../lib/server-timing.js';
 
 describe('ServerTiming', () => {
   test('Basic', async () => {
-    const timing = new ServerTiming();
+    const t = new ServerTiming();
 
-    timing.inc('test', 10);
+    t.inc('test', 10);
 
-    timing.inc('test', 100).inc('test', 100.333).inc('test2', 100.444);
+    t.inc('test', 100).inc('test', 100.333).inc('test2', 100.444);
 
-    timing.inc('test', -33);
+    t.inc('test', -33);
 
-    timing.meta('test', {
+    t.meta('test', {
       desc: 'Just a test metric',
     });
 
-    timing.inc('test', undefined);
+    t.inc('test', undefined);
 
-    const measure = timing.mark('marktest');
-
-    await new Promise((resolve) => {
-      setTimeout(resolve, 1000);
-    });
-
-    measure();
-
-    expect(timing.toHttpHeader()).toMatch(
+    expect(t.toHttpHeader()).toMatch(
       /^test;desc="Just a test metric";dur=177.33, test2;dur=100/,
     );
 
-    expect(timing.stats).toMatchInlineSnapshot(`
+    expect(t.stats).toMatchInlineSnapshot(`
       {
-        "marktest": {
-          "dur": 1000.4059839993715,
-          "metrics": [
-            1000.4059839993715,
-          ],
-        },
         "test": {
           "desc": "Just a test metric",
           "dur": 177.333,
