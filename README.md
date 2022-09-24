@@ -10,7 +10,7 @@ This library helps you track and log timing metrics during the request response 
 
 ## As Express middleware
 
-This gives you a `total` mark as a HTTP header automatically
+This middleware automatically appends a `Server-Timing` header with a `total` metric alongside your own metrics
 
 ```typescript
 /// <reference lib="dom" />
