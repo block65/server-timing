@@ -25,6 +25,6 @@
     "importsNotUsedAsValues": "error",
     "removeComments": true
   },
-  "include": ["./lib", "./__tests__"],
+  "include": ["./lib", "./__tests__", "./src", "./doc"],
   "exclude": ["./dist", "node_modules"]
 }
