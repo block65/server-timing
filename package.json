@@ -1,6 +1,6 @@
 {
   "name": "@block65/server-timing",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": false,
   "description": "Track and log timing metrics during async request-response cycles and surface them as a Server-Timing header",
   "homepage": "https://github.com/block65/server-timing#readme",
