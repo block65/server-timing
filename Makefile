@@ -5,7 +5,7 @@ all: dist
 
 .PHONY: clean
 clean:
-	yarn tsc -b --clean 
+	yarn tsc -b --clean
 
 .PHONY: test
 test:
