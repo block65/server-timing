@@ -5,15 +5,21 @@ export interface AlsStore {
   timing: ServerTiming;
 }
 
-export function createServerTimingContext() {
+export interface TimingContext {
+  storage: AsyncLocalStorage<AlsStore>;
+  run<R, A extends unknown[]>(fn: (...args: A) => R, ...args: A): R;
+  try<T>(fn: (t: ServerTiming) => T): T;
+}
+
+export function createServerTimingContext(): TimingContext {
   const storage = new AsyncLocalStorage<AlsStore>();
 
   return {
     storage,
-    run<R, A extends unknown[]>(fn: (...args: A) => R, ...args: A): R {
+    run(fn, ...args) {
       return storage.run({ timing: new ServerTiming() }, () => fn(...args));
     },
-    try: <T>(fn: (t: ServerTiming) => T): T => {
+    try(fn) {
       const currentStore = storage.getStore();
       // `store.timing` might be undefined if this function is called without
       // a server timing storage context.
