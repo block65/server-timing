@@ -3,7 +3,7 @@ import { performance } from 'node:perf_hooks';
 type Metric = number;
 
 interface Meta {
-  desc?: string; 
+  desc?: string;
 }
 
 function sum(prev: Metric, curr: Metric): Metric {
@@ -11,15 +11,18 @@ function sum(prev: Metric, curr: Metric): Metric {
 }
 
 export class ServerTiming {
-  #stats = new Map<string, Metric[]>();
+  readonly #stats = new Map<string, Metric[]>();
 
-  #meta = new Map<string, Meta>();
+  readonly #meta = new Map<string, Meta>();
 
   public meta(name: string, meta: Meta) {
     this.#meta.set(name, meta);
   }
 
   public inc(name: string, value: Metric | undefined) {
+    // we support undefined values as a nice DX improvement,
+    // in the case you pass a direct value that might be `undefined`
+    // It just saves an "if" wrapper in the calling code
     if (!value) {
       return this;
     }
@@ -33,21 +36,62 @@ export class ServerTiming {
   }
 
   public mark(name: string) {
-    const startMs = performance.now();
-    return () => {
-      this.inc(name, performance.now() - startMs);
+    const mark = performance.mark(name);
+
+    // we pass through any single argument so it can be used
+    // as a promise thenable `.then(measure)`
+    return (value?: unknown) => {
+      const measure = performance.measure(`${name} to now`, mark.name);
+      this.inc(name, measure.duration);
+      return value;
     };
   }
 
+  private get statsEntries() {
+    return [...this.#stats.entries()].map(
+      ([name, metrics]: [string, Metric[]]): [
+        string,
+        { dur: number; desc?: string; metrics: Metric[] },
+      ] => {
+        const desc = this.#meta.get(name)?.desc;
+
+        return [
+          name,
+          {
+            dur: metrics.reduce(sum, 0),
+            metrics,
+            ...(desc && { desc }),
+          },
+        ];
+      },
+    );
+  }
+
+  public get stats() {
+    return Object.fromEntries(this.statsEntries);
+  }
+
   public toHttpHeader(): string {
-    return [...this.#stats.entries()]
-      .map(([k, v]) => `${k};dur=${v.reduce(sum, 0).toFixed(2)}`)
+    return this.statsEntries
+      .map(([name, { dur, desc }]) =>
+        [
+          name,
+          ...(desc ? [`desc="${desc}"`] : []),
+          ...(dur > 0 ? [`dur=${dur.toFixed(2).replace(/\.?0+$/, '')}`] : []),
+        ].join(';'),
+      )
       .join(', ');
   }
 
   public toString(): string {
-    return [...this.#stats.entries()]
-      .map(([k, v]) => `${k};dur=${v.reduce(sum, 0).toFixed(2)}`)
-      .join(', ');
+    return this.statsEntries
+      .map(
+        ([name, { dur, desc }]) =>
+          `${name}:${[
+            `dur=${dur.toFixed(2).replace(/\.?0+$/, '')}`,
+            ...(desc ? [`desc="${desc}"`] : []),
+          ].join(',')}`,
+      )
+      .join('; ');
   }
 }

@@ -1,69 +1,41 @@
 import { describe, test } from '@jest/globals';
-import { createTimingStore } from '../lib/create-store.js';
-import { createServerTimingMiddleware } from '../lib/express.js';
-import { ServerTiming } from '../lib/server-timing.js';
+import { createServerTimingContext } from '../src/create.js';
 
-describe('Express', () => {
-  test('Middleware', async () => {
-    const { storage, withTiming } = createTimingStore();
+const promiseWait = async (ms = 1000) => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
 
-    const middleware = createServerTimingMiddleware(storage);
+describe('Basic', () => {
+  test('expect withServerTiming to still work outside of context', async () => {
+    const { try: withServerTiming } = createServerTimingContext();
+    expect(withServerTiming((t) => t.toString())).toEqual('');
 
-    expect.assertions(2);
+    await expect(withServerTiming(async (t) => t.toString())).resolves.toEqual(
+      '',
+    );
+  });
 
-    await new Promise<void>((resolve) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-      middleware({} as any, {} as any, () => {
-        withTiming((t) => t.inc('test', 100));
-        withTiming((t) => t.inc('test2', 100));
+  test('generic async usage', async () => {
+    const timing = createServerTimingContext();
 
-        withTiming((t) => {
-          expect(t.toHttpHeader()).toMatchInlineSnapshot(
-            '"test;dur=100.00, test2;dur=100.00"'
-          );
-          expect(t.toString()).toMatchInlineSnapshot(
-            '"test;dur=100.00, test2;dur=100.00"'
-          );
-        });
+    const result = await timing.run(async () => {
+      timing.try((t) => t.inc('random', 10));
 
-        resolve();
+      const someRandomValue = await timing.try(async (t) => {
+        await promiseWait(1000);
+        t.inc('random', 1);
+        return 'some random value';
       });
-    });
-  });
 
-  test('expect withTiming outside of async to throw', () => {
-    const { withTiming } = createTimingStore();
-    expect(withTiming).toThrowErrorMatchingInlineSnapshot('"No timing store"');
-  });
+      const measure = timing.try((t) => t.mark('test2'));
+      await promiseWait(1000);
+      measure();
 
-  test('ServerTiming', async () => {
-    const timing = new ServerTiming();
-
-    timing.inc('test', 10);
-
-    timing.inc('test', 100).inc('test', 100).inc('test2', 100);
-
-    timing.inc('test', -33);
-
-    timing.meta('test', {
-      desc: 'Just a test metric',
+      return someRandomValue;
     });
 
-    timing.inc('test', undefined);
-
-    const measure = timing.mark('marktest');
-
-    await new Promise((resolve) => {
-      setTimeout(resolve, 1000);
-    });
-
-    measure();
-
-    expect(timing.toHttpHeader()).toMatch(
-      /^test;dur=177\.00, test2;dur=100\.00, marktest;dur=1000\.\d{2}$/
-    );
-    expect(timing.toString()).toMatch(
-      /^test;dur=177\.00, test2;dur=100\.00, marktest;dur=1000\.\d{2}$/
-    );
+    expect(result).toBe('some random value');
   });
 });
